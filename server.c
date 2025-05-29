@@ -15,20 +15,15 @@
 pthread_mutex_t queue_mutex;
 pthread_cond_t master_condition;
 pthread_cond_t worker_condition;
-
-// struct thread_worker{
-//     pthread_t t;
-//     t->id = 0;             // Thread ID (placeholder)
-//     t->stat_req = 0;       // Static request count
-//     t->dynm_req = 0;       // Dynamic request count
-//     t->total_req = 0;      // Total request count
-
-// };
-//int cnt = 0;
+// global log
+server_log requests_log;
+//global pthread array
 pthread_t* pthread_array; 
-// typedef struct thread_worker thread_info;
+//global queue's , waiting_task_queue : queue for tasks enqueued from server(incoming clients), working_task_queue - queue used by worker threads to handle execution of requests.
 Queue waiting_tasks_queue, working_tasks_queue;
 // Parses command-line arguments
+int queue_size;
+
 void getargs(int *port,int *num_threads,int* queue_size, int argc, char *argv[])
 {
     if (argc < 4) {
@@ -55,11 +50,21 @@ void getargs(int *port,int *num_threads,int* queue_size, int argc, char *argv[])
 void* thread_function(void* arg/* the real argument is thread_stats* stats */){
     threads_stats t_stats = *((threads_stats*)arg); // we make conversion of arg to (thread_stats*), and then we dereference it to get thread_stats object.
     while (1) { 
+        printf("locking mutex first time in thread number %d \n", t_stats->id);
         pthread_mutex_lock(&queue_mutex);
+        printf("locking mutex first time in thread number %d success\n", t_stats->id);
         while(!(getSize(waiting_tasks_queue)>0)) 
         {
-            pthread_cond_signal(&master_condition);//doubts about this line SALEEM
-            pthread_cond_wait(&worker_condition,&queue_mutex);
+           // printf("checking master_condition in thread number %d \n", t_stats->id);
+        // if (getSize(waiting_tasks_queue) +getSize(working_tasks_queue) < queue_size) 
+        // {
+        //     printf("signaling master to be free thread number %d \n", t_stats->id);
+        //      pthread_cond_signal(&master_condition); //doubts about this line SALEEM
+        //      printf("signaling master to be free thread number %d success\n", t_stats->id);
+        // }
+            printf("waiting worker condition in thread number %d \n", t_stats->id);
+            pthread_cond_wait(&worker_condition,&queue_mutex); // stuck here...
+            printf("waiting worker condition in thread number %d success\n", t_stats->id);
         }
         int fd = getHead(waiting_tasks_queue);
         struct timeval arrival_time = getArrivalTime(waiting_tasks_queue, fd);
@@ -67,14 +72,23 @@ void* thread_function(void* arg/* the real argument is thread_stats* stats */){
         struct timeval dispatch_time;
         gettimeofday(&dispatch_time,NULL);
         enqueue(working_tasks_queue,fd,arrival_time,dispatch_time);
+        printf("unlocking mutex first time in thread number %d\n", t_stats->id);
         pthread_mutex_unlock(&queue_mutex);
-
-        requestHandle(fd, arrival_time, dispatch_time, t_stats, log);
-
+        printf("unlocking mutex first time in thread number %d success\n", t_stats->id);
+        requestHandle(fd, arrival_time, dispatch_time, t_stats, requests_log);
+        printf("locking mutex second time in thread number %d \n", t_stats->id);
         pthread_mutex_lock(&queue_mutex);
+        printf("locking mutex second time in thread number %d success\n", t_stats->id);
+        printf("line 73 \n");
         removeQ(working_tasks_queue,fd);
-        pthread_cond_signal(&master_condition);
+        if (getSize(waiting_tasks_queue) + getSize(working_tasks_queue) < queue_size) {
+            printf("pthread_cond_signal master_condition in thread number %d  \n", t_stats->id); 
+            pthread_cond_signal(&master_condition);
+            printf("pthread_cond_signal master_condition in thread number %d success \n", t_stats->id); 
+        }
+        printf("unlocking mutex second time in thread number %d \n", t_stats->id);
         pthread_mutex_unlock(&queue_mutex);
+        printf("unlocking mutex second time in thread number %d success \n", t_stats->id);
         Close(fd);
         }
         return NULL;
@@ -83,13 +97,13 @@ int main(int argc, char *argv[])
 {
     
     // Create the global server log
-    server_log log = create_log();
+    requests_log = create_log(); 
     pthread_mutex_init(&queue_mutex,NULL);
     pthread_cond_init(&master_condition,NULL);
     pthread_cond_init(&worker_condition,NULL);
     int listenfd, connfd, port, clientlen;
     struct sockaddr_in clientaddr;
-    int queue_size, thread_num ;
+    int thread_num ;
     getargs(&port,&thread_num,&queue_size, argc, argv);
     waiting_tasks_queue = create();
     working_tasks_queue = create();
@@ -128,19 +142,30 @@ int main(int argc, char *argv[])
         // a worker thread process it from the queue.
         
         struct timeval arrival, dispatch;
-        arrival.tv_sec = 0; arrival.tv_usec = 0;   // DEMO: dummy timestamps
-        dispatch.tv_sec = 0; dispatch.tv_usec = 0; // DEMO: dummy timestamps
+        gettimeofday(&arrival,NULL);
+        gettimeofday(&dispatch,NULL); // not the real dispatch time. this should be updated by thread worker when dequeued.
+        printf("lock in main \n");
         pthread_mutex_lock(&queue_mutex);
-        if(getSize(working_tasks_queue)+getSize(waiting_tasks_queue)>=queue_size){
+        printf("lock in main success \n"); 
+        while(getSize(working_tasks_queue)+getSize(waiting_tasks_queue)>=queue_size){
+            printf("entering cond_wait master_condition in main  \n"); 
             pthread_cond_wait(&master_condition,&queue_mutex);
+            printf("entering cond_wait master_condition in main success \n"); 
         }
-        enqueue(waiting_tasks_queue ,connfd, arrival,arrival);
-        pthread_mutex_unlock(&queue_mutex);
         
+        enqueue(waiting_tasks_queue ,connfd, arrival,dispatch);
+        if (getSize(waiting_tasks_queue) > 0) {
+            printf("broadcasting  worker_condition in main  \n"); 
+            pthread_cond_broadcast(&worker_condition);
+            printf("broadcasting  worker_condition in main success  \n"); 
+        }
+        printf("mutex unlock  in main  \n"); 
+        pthread_mutex_unlock(&queue_mutex);
+        printf("mutex unlock  in main success  \n"); 
     }
 
     // Clean up the server log before exiting
-    destroy_log(log);
+    destroy_log(requests_log);
     for(int i=0;i<thread_num;i++){
         free(thread_stats_array[i]); // Cleanup
         pthread_join(pthread_array[i],NULL);
