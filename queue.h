@@ -11,6 +11,7 @@ struct queue{
     struct timeval  dispatch;
     struct queue* next;
 };
+enum STATUS{FOUND = 1 , NOT_FOUND = 0 };
 typedef struct queue* Queue;
 Queue create();
 int getSize(Queue q);

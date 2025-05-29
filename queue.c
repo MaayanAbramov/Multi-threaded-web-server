@@ -10,7 +10,7 @@ sem_t semaphore;
 pthread_mutex_t m;
 Queue create() {
     sem_init(&semaphore,0,0);
-    pthread_mutex_init(&m,NULL);
+    
     Queue dummy;
     dummy = (Queue) malloc(sizeof(struct queue));
     if (dummy == NULL) {
@@ -26,18 +26,18 @@ Queue create() {
     return dummy; //this is a pointer to struct queue
 }
 int getSize(Queue q){
-    pthread_mutex_lock(&m);
+     
     int count = -1;
     Queue temp = q;
     while (temp != NULL) {
         temp = temp->next;
         count++;
     }
-    pthread_mutex_unlock(&m);
+     
     return count;
 }
 void enqueue(Queue q,int process_fd,struct timeval arrival_time,struct timeval dispatch_time){
-    pthread_mutex_lock(&m);
+     
     assert(q->process_fd == DUMMY_FD);
     Queue to_insert= (Queue)malloc(sizeof(*to_insert));
     if(to_insert == NULL){
@@ -49,16 +49,16 @@ void enqueue(Queue q,int process_fd,struct timeval arrival_time,struct timeval d
     to_insert->dispatch = dispatch_time;
     to_insert->next = q->next;
     q->next = to_insert;
-    pthread_mutex_unlock(&m);
+     
 }  // push from tail
 // pop from head
 int dequeue(Queue q) {
     
     printf("ok\n");
     assert(q!= NULL && q->process_fd == DUMMY_FD);
-    pthread_mutex_lock(&m);
+     
     if (q->next == NULL) {
-        pthread_mutex_unlock(&m);
+         
         return -1;
     }
     Queue temp = q;
@@ -71,7 +71,7 @@ int dequeue(Queue q) {
     temp->next = NULL; //the deletion
     head_fd = to_delete->process_fd;
     free(to_delete);
-    pthread_mutex_unlock(&m);
+
     return head_fd; // to be changed if needed... we may need to add parameters that we will fill once we fidn the head,
     // for example to pass them to the RequestHandler method, i.e: ArrivalTime,DispatchTime and so on..
 }
@@ -82,7 +82,6 @@ int dequeue(Queue q) {
 void removeQ(Queue q, int process_fd) {//remove specific instance
     Queue temp = q;
     Queue prev = q;
-    pthread_mutex_lock(&m);
     if (q->next != NULL){
         while (temp != NULL) {
             if (temp->process_fd == process_fd) {
@@ -95,12 +94,11 @@ void removeQ(Queue q, int process_fd) {//remove specific instance
             temp = temp->next;
         }
     }
-    pthread_mutex_unlock(&m);
+
 }
 void destroy(Queue q) { // destructor
     Queue to_delete = NULL;
     Queue runner = q;
-    pthread_mutex_lock(&m);
     while(runner!=NULL)
     {
         to_delete = runner;
@@ -108,20 +106,18 @@ void destroy(Queue q) { // destructor
         to_delete->next = NULL;
         free(to_delete);
     }
-    pthread_mutex_unlock(&m);
+
     return;
 }
 int getHead(Queue q) {
-    pthread_mutex_lock(&m);
     if (q->next == NULL) {
-        pthread_mutex_unlock(&m);
         return q->process_fd;
     }
     Queue temp = q;
     while (temp->next != NULL) {
         temp = temp->next;
     }
-    pthread_mutex_unlock(&m);
+
     return temp->process_fd;
 }
 
@@ -129,15 +125,12 @@ struct timeval getArrivalTime(Queue q,int process_fd) {
     struct timeval required_timeval;
     timerclear(&required_timeval);
     Queue temp = q;
-    pthread_mutex_lock(&m);
     while (temp != NULL) {
         if (temp->process_fd == process_fd) {
-            pthread_mutex_unlock(&m);
             return temp->arrival;
         }
         temp = temp->next;
     }
-    pthread_mutex_unlock(&m);
     return required_timeval;
 }
 /*
