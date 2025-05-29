@@ -39,7 +39,7 @@ void* thread_function(void* arg){
 }
 int main(int argc, char *argv[])
 {
-    printf("wtf\n");
+    
     // Create the global server log
     server_log log = create_log();
     
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in clientaddr;
     int thread_num=8; // this shouldn't be 8, just a temp
     getargs(&port, argc, argv);
-    printf("what the fuck\n");
+    
     q = create();
     thread_info* thread_array = (thread_info*)malloc(sizeof(thread_info)*thread_num);
     if(thread_array == NULL){
