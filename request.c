@@ -190,7 +190,8 @@ void requestServePost(int fd,  struct timeval arrival, struct timeval dispatch, 
 // handle a request
 void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, threads_stats t_stats, server_log log)
 {
-    // TODO:  should update static request stats
+    // TODO:  should update static request stats (done)
+
     int is_static;
     struct stat sbuf;
     char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
@@ -209,39 +210,50 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
             requestError(fd, filename, "404", "Not found",
                          "OS-HW3 Server could not find this file",
                          arrival, dispatch, t_stats);
+			t_stats->total_req++;
             return;
         }
-
+		
         if (is_static) {
             if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode)) {
                 requestError(fd, filename, "403", "Forbidden",
                              "OS-HW3 Server could not read this file",
                              arrival, dispatch, t_stats);
-                return;
+
+				t_stats->total_req++;
+			 	return;
             }
 
             requestServeStatic(fd, filename, sbuf.st_size, arrival, dispatch, t_stats);
-
+			t_stats->stat_req++;
+			t_stats->total_req++;
         } else {
             if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
                 requestError(fd, filename, "403", "Forbidden",
                              "OS-HW3 Server could not run this CGI program",
                              arrival, dispatch, t_stats);
-                return;
+				t_stats->total_req++;
+				return;
             }
-
+			
             requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats);
+			t_stats->dynm_req++;
+			t_stats->total_req++;
         }
 
         // TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
 
     } else if (!strcasecmp(method, "POST")) {
+	
         requestServePost(fd, arrival, dispatch, t_stats, log);
+		t_stats->post_req++;
+		t_stats->total_req++;
 
     } else {
         requestError(fd, method, "501", "Not Implemented",
                      "OS-HW3 Server does not implement this method",
                      arrival, dispatch, t_stats);
+		t_stats->total_req++;
         return;
     }
 }

@@ -54,7 +54,7 @@ void enqueue(Queue q,int process_fd,struct timeval arrival_time,struct timeval d
 // pop from head
 int dequeue(Queue q) {
     
-    printf("deQueue\n");
+    //printf("deQueue\n");
     assert(q!= NULL && q->process_fd == DUMMY_FD);
      
     if (q->next == NULL) {
@@ -71,7 +71,7 @@ int dequeue(Queue q) {
     temp->next = NULL; //the deletion
     head_fd = to_delete->process_fd;
     free(to_delete);
-    printf("end deQueue\n");
+    //printf("end deQueue\n");
     return head_fd; // to be changed if needed... we may need to add parameters that we will fill once we fidn the head,
     // for example to pass them to the RequestHandler method, i.e: ArrivalTime,DispatchTime and so on..
 }
