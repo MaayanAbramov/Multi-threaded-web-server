@@ -1,35 +1,36 @@
 #!/bin/bash
 
-PORT=8091
-THREADS=5
-QUEUE_SIZE=10
-NUM_CLIENTS=20
-SERVER_EXEC=./server
-CLIENT_EXEC=./client
-FILENAME=/home.html
+ PORT=8003
+# THREADS=5
+# QUEUE_SIZE=10
+ NUM_CLIENTS=10000
+# SERVER_EXEC=./server
+ CLIENT_EXEC=./client
+ FILENAME=/home.html
 
-# Compile
-make clean > /dev/null
-make server client > /dev/null
-if [ $? -ne 0 ]; then
-  echo "❌ Compilation failed"
-  exit 1
-fi
+# # Compile
+# make clean > /dev/null
+# make server client > /dev/null
+# if [ $? -ne 0 ]; then
+#   echo "❌ Compilation failed"
+#   exit 1
+# fi
 
-# Create test HTML file
-mkdir -p public
-echo "<html><body><h1>Concurrent Test</h1></body></html>" > public/home.html
+# # Create test HTML file
+ mkdir -p public
+ echo "<html><body><h1>Concurrent Test</h1></body></html>" > public/home.html
 
-# Start server
-$SERVER_EXEC $PORT $THREADS $QUEUE_SIZE &
-SERVER_PID=$!
-sleep 1
+# # Start server
+# $SERVER_EXEC $PORT $THREADS $QUEUE_SIZE &
+# SERVER_PID=$!
+# sleep 1
 
-# Prepare output dir
-mkdir -p outputs
-rm -f outputs/output_*.txt
+# # Prepare output dir
+ mkdir -p outputs
+ rm -f outputs/output_*.txt
 
 # Launch clients in parallel
+SERVER_PID  = 7412
 echo "🚀 Launching $NUM_CLIENTS GET requests in parallel..."
 for i in $(seq 1 $NUM_CLIENTS); do
   $CLIENT_EXEC localhost $PORT $FILENAME GET > outputs/output_$i.txt &
