@@ -63,7 +63,7 @@ void* thread_function(void* arg/* the real argument is thread_stats* stats */){
             //printf("signaling master to be free thread number %d success\n", t_stats->id);
         // }
             //printf("waiting worker condition in thread number %d, size of waiting queue is %d, size of working queue"
-                    " is %d, lastly, queue size : %d \n", t_stats->id,getSize(waiting_tasks_queue),getSize(working_tasks_queue),queue_size);
+            //        " is %d, lastly, queue size : %d \n", t_stats->id,getSize(waiting_tasks_queue),getSize(working_tasks_queue),queue_size);
             pthread_cond_wait(&worker_condition,&queue_mutex); // stuck here...
             //printf("waiting worker condition in thread number %d success\n", t_stats->id);
         }
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
         while(getSize(working_tasks_queue)+getSize(waiting_tasks_queue)>=queue_size){
             //printf("entering cond_wait master_condition in main (beacuse of capacity)  \n");
             //printf("main thread is going to wait, size of waiting queue is %d, size of working queue is %d, lastly, "
-                    "queue size : %d \n",getSize(waiting_tasks_queue), getSize(working_tasks_queue),queue_size);
+              //      "queue size : %d \n",getSize(waiting_tasks_queue), getSize(working_tasks_queue),queue_size);
             pthread_cond_wait(&master_condition,&queue_mutex);
             //printf("entering cond_wait master_condition in main (beacuse of capacity), success \n");
         }
@@ -167,9 +167,9 @@ int main(int argc, char *argv[])
         cntcnt++;
         enqueue(waiting_tasks_queue ,connfd, arrival,dispatch);
         //printf("main thread is going to wait, size of waiting queue is %d, size of working queue is %d, lastly, "
-                "queue size : %d \n",getSize(waiting_tasks_queue), getSize(working_tasks_queue),queue_size);
+         //       "queue size : %d \n",getSize(waiting_tasks_queue), getSize(working_tasks_queue),queue_size);
         //printf("******************************************number of tasks so far is is "
-               "%d****************************************\n",cntcnt);
+           //    "%d****************************************\n",cntcnt);
         //printf("main thread successfully enqueued new task!\n");
         if (getSize(waiting_tasks_queue) > 0) {
             //printf("signaling  worker threads to work , after enqueueing the task in main  \n");

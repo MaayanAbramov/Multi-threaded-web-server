@@ -122,7 +122,7 @@ void requestGetFiletype(char *filename, char *filetype)
 		strcpy(filetype, "text/plain");
 }
 
-void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval arrival, struct timeval dispatch, threads_stats t_stats)
+void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval arrival, struct timeval dispatch, threads_stats t_stats, char* log_buff, int* log_buf_len)
 {
 	char buf[MAXLINE], *emptylist[] = {NULL};
 
@@ -133,6 +133,10 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval a
     int buf_len = append_stats(buf, t_stats, arrival, dispatch);
 
     Rio_writen(fd, buf, buf_len);
+	sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
+	sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
+    *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
+
    	int pid = 0;
    	if ((pid = Fork()) == 0) {
      	 /* Child process */
@@ -145,7 +149,7 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval a
 }
 
 
-void requestServeStatic(int fd, char *filename, int filesize, struct timeval arrival, struct timeval dispatch, threads_stats t_stats)
+void requestServeStatic(int fd, char *filename, int filesize, struct timeval arrival, struct timeval dispatch, threads_stats t_stats, char* log_buff, int* log_buf_len)
 {
 	int srcfd;
 	char *srcp, filetype[MAXLINE], buf[MAXBUF];
@@ -166,6 +170,13 @@ void requestServeStatic(int fd, char *filename, int filesize, struct timeval arr
 	sprintf(buf, "%sContent-Type: %s\r\n", buf, filetype);
     int buf_len = append_stats(buf, t_stats, arrival, dispatch);
     Rio_writen(fd, buf, buf_len);
+
+	// put together response
+	sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
+	sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
+	sprintf(log_buff, "%sContent-Length: %d\r\n", log_buff, filesize);
+	sprintf(log_buff, "%sContent-Type: %s\r\n", log_buff, filetype);
+    *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
 
 	//  Writes out to the client socket the memory-mapped file
 	Rio_writen(fd, srcp, filesize);
@@ -194,7 +205,8 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
 
     int is_static;
     struct stat sbuf;
-    char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
+	int log_buf_len;
+    char buf[MAXLINE], log_buff[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
     char filename[MAXLINE], cgiargs[MAXLINE];
     rio_t rio;
 
@@ -224,7 +236,7 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
 			 	return;
             }
 
-            requestServeStatic(fd, filename, sbuf.st_size, arrival, dispatch, t_stats);
+            requestServeStatic(fd, filename, sbuf.st_size, arrival, dispatch, t_stats, log_buff, &log_buf_len);
 			t_stats->stat_req++;
 			t_stats->total_req++;
         } else {
@@ -236,19 +248,20 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
 				return;
             }
 			
-            requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats);
+            requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats, log_buff,&log_buf_len);
 			t_stats->dynm_req++;
 			t_stats->total_req++;
         }
 
         // TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
+		add_to_log( log, &log_buff, log_buf_len);
 
     } else if (!strcasecmp(method, "POST")) {
 	
         requestServePost(fd, arrival, dispatch, t_stats, log);
 		t_stats->post_req++;
 		t_stats->total_req++;
-
+		
     } else {
         requestError(fd, method, "501", "Not Implemented",
                      "OS-HW3 Server does not implement this method",

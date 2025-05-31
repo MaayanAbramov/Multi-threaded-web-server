@@ -1,6 +1,6 @@
 #ifndef SERVER_LOG_H
 #define SERVER_LOG_H
-
+#include "segel.h"
 // TODO:
 // Implement a thread-safe server log system.
 // - The log should support concurrent access from multiple threads.
