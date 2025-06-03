@@ -59,7 +59,7 @@ void* thread_function(void* arg/* the real argument is thread_stats* stats */){
         // if (getSize(waiting_tasks_queue) +getSize(working_tasks_queue) < queue_size) 
         // {
             //printf("signaling master to be free thread number %d \n", t_stats->id);
-            pthread_cond_signal(&master_condition); //doubts about this line SALEEM
+            // pthread_cond_signal(&master_condition); /\/doubts about this line SALEEM */
             //printf("signaling master to be free thread number %d success\n", t_stats->id);
         // }
             //printf("waiting worker condition in thread number %d, size of waiting queue is %d, size of working queue"

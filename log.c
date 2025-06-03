@@ -82,7 +82,7 @@ server_log create_log() {
         unix_error("Malloc Error \n");
         exit(1);
     }
-    strcpy(dummy->log_buf, dummy);
+    strcpy(dummy->log_buf, dummy_buffer);
     dummy->len_log_buf = len;
     dummy->next = NULL;
     return dummy;
