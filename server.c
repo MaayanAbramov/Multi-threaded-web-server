@@ -59,7 +59,7 @@ void* thread_function(void* arg/* the real argument is thread_stats* stats */){
         // if (getSize(waiting_tasks_queue) +getSize(working_tasks_queue) < queue_size) 
         // {
             //printf("signaling master to be free thread number %d \n", t_stats->id);
-            pthread_cond_signal(&master_condition); //doubts about this line SALEEM
+            // pthread_cond_signal(&master_condition); /\/doubts about this line SALEEM */
             //printf("signaling master to be free thread number %d success\n", t_stats->id);
         // }
             //printf("waiting worker condition in thread number %d, size of waiting queue is %d, size of working queue"
@@ -133,8 +133,8 @@ int main(int argc, char *argv[])
         stats->dynm_req = 0;       // Dynamic request count
         stats->post_req = 0 ;     //post request count
         stats->total_req = 0;      // Total request count
-        pthread_create(&thread,NULL, &thread_function,(void*)&stats/*to be filled*/);//please notice that stats is the parameter of the thread function
         thread_stats_array[i]=stats;
+        pthread_create(&thread,NULL, &thread_function,(void*)&thread_stats_array[i]/*to be filled*/);//please notice that stats is the parameter of the thread function
         pthread_array[i]=thread;
     }
     listenfd = Open_listenfd(port);
