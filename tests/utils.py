@@ -75,6 +75,7 @@ def validate_response_full(response: requests.models.Response, expected_headers:
 
 
 def validate_response_full_with_dispatch(response: requests.models.Response, expected_headers: dict, expected: str, dispatch: float):
+    print(f"status code is : {response.status_code}")
     assert response.status_code == 200
     assert response.headers.keys() == expected_headers.keys(),\
         f"\nExpected:\n{list(expected_headers.keys())}"\
