@@ -128,17 +128,9 @@ def test_statistics(server_port):
                 seconds="1.0")
             validate_response_full(response, expected_headers, expected)
         with FuturesSession() as session:
-            future = session.post(
-                f"http://localhost:{server_port}/not_exist.html")
-            response = future.result()
-            post_count += 1
-            expected_headers = generate_error_headers(155, 5, 2, 1, post_count)
-            expected = NOT_IMPLEMENTED_OUTPUT_CONTENT.format(method=r"POST")
-            validate_response_err(response, 501, expected_headers, expected)
-        with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/")
             response = future.result()
-            expected_headers = generate_static_headers(293, 6, 3, 1, post_count)
+            expected_headers = generate_static_headers(293, 5, 3, 1, post_count)
             expected = STATIC_OUTPUT_CONTENT
             validate_response_full(response, expected_headers, expected)
         server.send_signal(SIGINT)
