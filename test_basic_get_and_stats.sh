@@ -1,10 +1,10 @@
 #!/bin/bash
 
  PORT=8003
-# THREADS=5
-# QUEUE_SIZE=10
- NUM_CLIENTS=10000
-# SERVER_EXEC=./server
+THREADS=5
+QUEUE_SIZE=10
+ NUM_CLIENTS=100
+SERVER_EXEC=./server
  CLIENT_EXEC=./client
  FILENAME=/home.html
 
@@ -21,16 +21,16 @@
  echo "<html><body><h1>Concurrent Test</h1></body></html>" > public/home.html
 
 # # Start server
-# $SERVER_EXEC $PORT $THREADS $QUEUE_SIZE &
-# SERVER_PID=$!
-# sleep 1
+$SERVER_EXEC $PORT $THREADS $QUEUE_SIZE &
+SERVER_PID=$!
+sleep 1
 
 # # Prepare output dir
  mkdir -p outputs
  rm -f outputs/output_*.txt
 
 # Launch clients in parallel
-SERVER_PID  = 7412
+# SERVER_PID  = 7412
 echo "🚀 Launching $NUM_CLIENTS GET requests in parallel..."
 for i in $(seq 1 $NUM_CLIENTS); do
   $CLIENT_EXEC localhost $PORT $FILENAME GET > outputs/output_$i.txt &
