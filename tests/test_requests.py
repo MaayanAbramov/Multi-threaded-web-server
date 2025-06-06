@@ -18,7 +18,7 @@ def gif_file():
 
 
 def test_gif(server_port, gif_file):
-    with Server("./server", server_port, 4, 8, "block") as server:
+    with Server("./server", server_port, 4, 8) as server:
         sleep(0.1)
         with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/{gif_file}")
@@ -43,7 +43,7 @@ def jpg_file():
 
 
 def test_jpg(server_port, jpg_file):
-    with Server("./server", server_port, 4, 8, "block") as server:
+    with Server("./server", server_port, 4, 8) as server:
         sleep(0.1)
         with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/{jpg_file}")
@@ -67,7 +67,7 @@ def plain_file():
 
 
 def test_plain(server_port, plain_file):
-    with Server("./server", server_port, 4, 8, "block") as server:
+    with Server("./server", server_port, 4, 8) as server:
         sleep(0.1)
         with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/{plain_file}")
@@ -83,7 +83,7 @@ def test_plain(server_port, plain_file):
         validate_out(out, err, expected)
 
 def test_static_slash(server_port):
-    with Server("./server", server_port, 4, 8, "block") as server:
+    with Server("./server", server_port, 4, 8) as server:
         sleep(0.1)
         with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/")
@@ -99,7 +99,7 @@ def test_static_slash(server_port):
 
 def test_statistics(server_port):
     post_count = 0
-    with Server("./server", server_port, 1, 8, "block") as server:
+    with Server("./server", server_port, 1, 8) as server:
         sleep(0.1)
         with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/")
@@ -117,13 +117,13 @@ def test_statistics(server_port):
         with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/")
             response = future.result()
-            expected_headers = generate_static_headers(293, 3, 2, 0, post_count, 0)
+            expected_headers = generate_static_headers(293, 3, 2, 0, post_count)
             expected = STATIC_OUTPUT_CONTENT
             validate_response_full(response, expected_headers, expected)
         with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/output.cgi?1")
             response = future.result()
-            expected_headers = generate_dynamic_headers(123, 4, 2, 1, 0, post_count)
+            expected_headers = generate_dynamic_headers(123, 4, 2, 1, post_count)
             expected = DYNAMIC_OUTPUT_CONTENT.format(
                 seconds="1.0")
             validate_response_full(response, expected_headers, expected)
