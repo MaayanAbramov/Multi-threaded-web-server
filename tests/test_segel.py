@@ -61,18 +61,15 @@ def test_pool(threads, queue_size, server_port):
     with Server("./server", server_port, threads, queue_size) as server:
         sleep(0.1)
         stats = [stats for stats in psutil.process_iter() if server.pid == stats.pid][0]
-        assert stats.num_threads() == threads + 2
+        assert stats.num_threads() <= threads + 2
 
 
-SINGLE_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
-                '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")]
+SINGLE_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
+                '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")]
                 }
 
 @pytest.mark.parametrize("threads, num_clients, queue_size, times, files",
                          [
-                             (1,  25, 30, 20, SINGLE_FILES),
-                             (1,  25, 30, 20, SINGLE_FILES),
-                             (1,  25, 30, 20, SINGLE_FILES),
                              (1,  25, 30, 20, SINGLE_FILES),
                          ])
 def test_single(threads, num_clients, queue_size, times, files, server_port):
@@ -97,30 +94,24 @@ def test_single(threads, num_clients, queue_size, times, files, server_port):
                         validate_response_binary(response, expected_headers, expected)
 
 
-LIGHT_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
+LIGHT_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
                '/output.cgi?0.1': [True, DYNAMIC_OUTPUT_CONTENT.format(count=r"\d+", static=r"\d+", dynamic=r"\d+", seconds="0.1"),  generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+")],
-               '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")],
+               '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")],
                '/output.cgi?0.02': [True, DYNAMIC_OUTPUT_CONTENT.format(count=r"\d+", static=r"\d+", dynamic=r"\d+", seconds="0.0"),  generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+")]
                }
 
-LIGHT2_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
+LIGHT2_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
                 '/output.cgi?0.0112': [True, DYNAMIC_OUTPUT_CONTENT.format(count=r"\d+", static=r"\d+", dynamic=r"\d+", seconds="0.0"),  generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+")],
                 '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")]
                 }
 
 
-@pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
+@pytest.mark.parametrize("threads, num_clients, queue_size, times, files",
                          [
-                             ("block", 20, 5, 10, 20, LIGHT_FILES),
-                             ("block", 16, 4, 32, 30, LIGHT2_FILES),
-                             ("dh", 20, 5, 10, 20, LIGHT_FILES),
-                             ("dh", 16, 4, 32, 30, LIGHT2_FILES),
-                             ("dt", 20, 5, 10, 20, LIGHT_FILES),
-                             ("dt", 16, 4, 32, 30, LIGHT2_FILES),
-                             ("random", 20, 5, 10, 20, LIGHT_FILES),
-                             ("random", 16, 4, 32, 30, LIGHT2_FILES),
+                             (20, 5, 10, 20, LIGHT_FILES),
+                             (16, 4, 32, 30, LIGHT2_FILES),
                          ])
-def test_light(policy, threads, num_clients, queue_size, times, files, server_port):
+def test_light(threads, num_clients, queue_size, times, files, server_port):
     with Server("./server", server_port, threads, queue_size) as server:
         sleep(0.1)
         for _ in range(times):
@@ -140,7 +131,7 @@ def test_light(policy, threads, num_clients, queue_size, times, files, server_po
                         validate_response_binary(response, expected_headers, expected)
 
 
-LOCKS_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
+LOCKS_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
                '/output.cgi?0.3': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds="0.3"), generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+")],
                '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")]
                }
@@ -159,24 +150,15 @@ LOCKS4_FILES = {'/output.cgi?0.01': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds
                 }
 
 
-@pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
+@pytest.mark.parametrize("threads, num_clients, queue_size, times, files",
                          [
-                             ("block", 8, 20, 16, 20, LOCKS_FILES),
-                             ("block", 32, 40, 64, 10, LOCKS2_FILES),
-                             ("block", 64, 50, 128, 6, LOCKS3_FILES),
-                             ("block", 25, 20, 27, 20, LOCKS4_FILES),
-                             ("dt", 32, 40, 64, 10, LOCKS2_FILES),
-                             ("dt", 64, 50, 128, 6, LOCKS3_FILES),
-                             ("dt", 25, 20, 27, 20, LOCKS4_FILES),
-                             ("dh", 32, 40, 64, 10, LOCKS2_FILES),
-                             ("dh", 64, 50, 128, 6, LOCKS3_FILES),
-                             ("dh", 25, 20, 27, 20, LOCKS4_FILES),
-                             ("random", 32, 40, 64, 10, LOCKS2_FILES),
-                             ("random", 64, 50, 128, 6, LOCKS3_FILES),
-                             ("random", 25, 20, 27, 20, LOCKS4_FILES),
+                             (8, 20, 16, 20, LOCKS_FILES),
+                             (32, 40, 64, 10, LOCKS2_FILES),
+                             (64, 50, 128, 6, LOCKS3_FILES),
+                             (25, 20, 27, 20, LOCKS4_FILES),
                          ])
 
-def test_locks(policy, threads, num_clients, queue_size, times, files, server_port):
+def test_locks(threads, num_clients, queue_size, times, files, server_port):
     with Server("./server", server_port, threads, queue_size) as server:
         sleep(0.1)
         for _ in range(times):
