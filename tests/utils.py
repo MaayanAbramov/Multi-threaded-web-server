@@ -7,6 +7,15 @@ import math
 
 from definitions import DYNAMIC_OUTPUT_HEADERS, ERROR_OUTPUT_HEADERS, STATIC_OUTPUT_HEADERS
 
+def concat_dict_as_string(string, dictionary,dictionary_keys):
+    to_ret = ""
+    if string == "":
+        to_ret =  "\r\n".join([':'.join([k, dictionary[k]]) for k in dictionary_keys if k not in ["Content-length","Content-type","Server","Content-Length","Content-Type"]])
+    else:
+        list_strings = [string]
+        list_strings.extend([':'.join([k, dictionary[k]]) for k in dictionary_keys if k not in ["Content-length","Content-type","Server","Content-Length","Content-Type"]])
+        to_ret =  "\r\n".join(list_strings)
+    return to_ret+"\r\n"
 
 def generate_static_headers(length, count, static_count, dynamic_count, post_count,content_type="text/html"):
     headers = copy(STATIC_OUTPUT_HEADERS)
@@ -59,6 +68,20 @@ def validate_response(response: requests.models.Response, expected_headers: dict
         f"\nGot:\n{response.text}"
 
 
+def validate_response_full_post(response: requests.models.Response, expected_headers: dict, expected: str, post_string):
+    assert response.status_code == 200
+    assert response.headers.keys() == expected_headers.keys(),\
+        f"\nExpected:\n{list(expected_headers.keys())}"\
+        f"\nGot:\n{list(response.headers.keys())}"
+    for header, value in expected_headers.items():
+        assert re.fullmatch(value, response.headers[header]),\
+            f"\nHeader:\n{header}"\
+            f"\nExpected:\n{value}"\
+            f"\nGot:\n{response.headers[header]}"
+    assert re.fullmatch(post_string, response.text),\
+        f"\nExpected:\n{post_string}"\
+        f"\nGot:\n{response.text}"
+    
 def validate_response_full(response: requests.models.Response, expected_headers: dict, expected: str):
     assert response.status_code == 200
     assert response.headers.keys() == expected_headers.keys(),\
@@ -73,9 +96,7 @@ def validate_response_full(response: requests.models.Response, expected_headers:
         f"\nExpected:\n{expected}"\
         f"\nGot:\n{response.text}"
 
-
 def validate_response_full_with_dispatch(response: requests.models.Response, expected_headers: dict, expected: str, dispatch: float):
-    print(f"status code is : {response.status_code}")
     assert response.status_code == 200
     assert response.headers.keys() == expected_headers.keys(),\
         f"\nExpected:\n{list(expected_headers.keys())}"\

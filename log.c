@@ -123,11 +123,19 @@ int get_log(server_log log, char** dst) {
     *dst = (char*)malloc(total_len + 1); // Allocate for caller
     int offset = 0 ;
     tmp = log->next;
+    int first_time = 1;
     if (*dst != NULL) {
         while(tmp != NULL){
-            strcat((*dst)+offset,tmp->log_buf);
+            if(first_time == 0){
+            strcat(*dst,tmp->log_buf);
+            }
+            else{
+                strcpy(*dst,tmp->log_buf);
+                first_time = 0;
+            }
             offset += tmp->len_log_buf;
             tmp = tmp->next;
+            
         }
     }
     else{

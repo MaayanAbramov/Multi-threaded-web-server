@@ -139,8 +139,8 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval a
 
         Rio_writen(fd, buf, buf_len);
 
-        sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
-        sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
+        //sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
+        //sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
         *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
 
         int pid = 0;
@@ -179,10 +179,10 @@ void requestServeStatic(int fd, char *filename, int filesize, struct timeval arr
         Rio_writen(fd, buf, buf_len);
 
         // put together response
-        sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
-        sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
-        sprintf(log_buff, "%sContent-Length: %d\r\n", log_buff, filesize);
-        sprintf(log_buff, "%sContent-Type: %s\r\n", log_buff, filetype);
+        // sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
+        // sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
+        // sprintf(log_buff, "%sContent-Length: %d\r\n", log_buff, filesize);
+        // sprintf(log_buff, "%sContent-Type: %s\r\n", log_buff, filetype);
     *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
 
         //  Writes out to the client socket the memory-mapped file
