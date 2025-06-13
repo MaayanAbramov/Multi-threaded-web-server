@@ -3,7 +3,7 @@
 # To remove files, type "make clean"
 #
 
-OBJS = server.o request.o segel.o client.o log.o
+OBJS = server.o request.o segel.o client.o log.o queue.o
 TARGET = server
 
 CC = gcc

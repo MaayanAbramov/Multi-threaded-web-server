@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include "log.h"
 #include "assert.h"
@@ -126,16 +127,20 @@ int get_log(server_log log, char** dst) {
     int first_time = 1;
     if (*dst != NULL) {
         while(tmp != NULL){
+          if (false) {
             if(first_time == 0){
-            strcat(*dst,tmp->log_buf);
+              strcat(*dst,tmp->log_buf);
             }
             else{
-                strcpy(*dst,tmp->log_buf);
-                first_time = 0;
+              strcpy(*dst,tmp->log_buf);
+              first_time = 0;
             }
-            offset += tmp->len_log_buf;
-            tmp = tmp->next;
-            
+          } else {
+            strncpy(*dst + offset,tmp->log_buf,tmp->len_log_buf + 1);
+          }
+
+          offset += tmp->len_log_buf;
+          tmp = tmp->next;
         }
     }
     else{
