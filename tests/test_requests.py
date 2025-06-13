@@ -19,7 +19,6 @@ def gif_file():
 
 def test_gif(server_port, gif_file):
     with Server("./server", server_port, 4, 8) as server:
-    with Server("./server", server_port, 4, 8) as server:
         sleep(0.1)
         with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/{gif_file}")
