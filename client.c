@@ -16,6 +16,11 @@
 
 #include "segel.h"
 
+#include <stdio.h>
+#include <stdbool.h>
+FILE* log_f;
+bool is_post;
+
 // Sends an HTTP request to the server using the given socket
 void clientSend(int fd, char *filename, char* method)
 {
@@ -24,6 +29,8 @@ void clientSend(int fd, char *filename, char* method)
 
     Gethostname(hostname, MAXLINE); // Get the client's hostname
 
+    is_post = (0==strcmp(method,"POST"));
+    
     // Form the HTTP request line and headers
     sprintf(buf, "%s %s HTTP/1.1\n", method, filename);
     sprintf(buf, "%shost: %s\n\r\n", buf, hostname);
@@ -32,6 +39,12 @@ void clientSend(int fd, char *filename, char* method)
 
     // Send the request to the server
     Rio_writen(fd, buf, strlen(buf));
+
+    if (!is_post) {
+      log_f = fopen("get_request.txt","a");
+    } else {
+      log_f = fopen("post_request.txt", "w");
+    }
 }
 
 // Reads and prints the server's HTTP response
@@ -49,7 +62,11 @@ void clientPrint(int fd)
     n = Rio_readlineb(&rio, buf, MAXBUF);
     while (strcmp(buf, "\r\n") && (n > 0)) {
         printf("Header: %s", buf);
-
+	if (!is_post) {
+	  if (NULL != strstr(buf, "Stat-")) {
+	    fprintf(log_f,"%s", buf);
+	  }
+	}
         // Try to parse Content-Length header
         if (sscanf(buf, "Content-Length: %d ", &length) == 1) {
             printf("Length = %d\n", length);
@@ -57,11 +74,16 @@ void clientPrint(int fd)
 
         n = Rio_readlineb(&rio, buf, MAXBUF);
     }
-
+    if (!is_post) {
+      fprintf(log_f,"\n");
+    }
     // --- Read and print HTTP body ---
     n = Rio_readlineb(&rio, buf, MAXBUF);
     while (n > 0) {
         printf("%s", buf);
+	if (is_post) {
+	  fprintf(log_f, "%s", buf);
+	}
         n = Rio_readlineb(&rio, buf, MAXBUF);
     }
 }
@@ -99,5 +121,6 @@ int main(int argc, char *argv[])
 
     // Clean up
     Close(clientfd);
+    fclose(log_f);
     return 0;
 }

@@ -32,3 +32,5 @@ output.cgi: output.c
 clean:
 	-rm -f $(OBJS) server client output.cgi
 	-rm -rf public
+test: tests/*
+	-rm -rf tests/get_request.txt tests/post_request.txt

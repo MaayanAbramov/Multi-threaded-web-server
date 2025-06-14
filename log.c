@@ -4,7 +4,7 @@
 #include "log.h"
 #include "assert.h"
 
-int readers_inside, writers_inside, writers_waiting; 
+int readers_inside, writers_inside, writers_waiting;
 pthread_cond_t read_allowed;
 pthread_cond_t write_allowed;
 pthread_mutex_t global_lock;
@@ -18,7 +18,7 @@ void readers_writers_init() {
     pthread_mutex_init(&global_lock, NULL);
 }
 void readers_writers_destroy() {
-    
+
     pthread_cond_destroy(&read_allowed);
     pthread_cond_destroy(&write_allowed);
     pthread_mutex_destroy(&global_lock);
@@ -28,7 +28,7 @@ void reader_lock() {
     while (writers_inside > 0 || writers_waiting > 0)
         pthread_cond_wait(&read_allowed, &global_lock);
     readers_inside++;
-    pthread_mutex_unlock(&global_lock); 
+    pthread_mutex_unlock(&global_lock);
 }
 
 void reader_unlock() {
@@ -68,7 +68,7 @@ struct Server_Log {
 
 // Creates a new server log instance (stub)
 server_log create_log() {
-    
+
     readers_writers_init();
     // TODO: Allocate and initialize internal log structure
     const char* dummy_buffer = "";
@@ -104,7 +104,7 @@ void destroy_log(server_log log) {
     }
 
     readers_writers_destroy();
-    free(log);
+    /* free(log); */
     return;
 }
 
@@ -124,20 +124,9 @@ int get_log(server_log log, char** dst) {
     *dst = (char*)malloc(total_len + 1); // Allocate for caller
     int offset = 0 ;
     tmp = log->next;
-    int first_time = 1;
     if (*dst != NULL) {
         while(tmp != NULL){
-          if (false) {
-            if(first_time == 0){
-              strcat(*dst,tmp->log_buf);
-            }
-            else{
-              strcpy(*dst,tmp->log_buf);
-              first_time = 0;
-            }
-          } else {
-            strncpy(*dst + offset,tmp->log_buf,tmp->len_log_buf + 1);
-          }
+          strncpy(*dst + offset,tmp->log_buf,tmp->len_log_buf + 1);
 
           offset += tmp->len_log_buf;
           tmp = tmp->next;
@@ -156,7 +145,7 @@ void add_to_log(server_log log, const char* data, int data_len) {
     // TODO: Append the provided data to the log
     // This function should handle concurrent access
     assert(strlen(data) == data_len);
-    server_log to_insert= (server_log)malloc(sizeof(*to_insert));
+    server_log to_insert = (server_log)malloc(sizeof(*to_insert));
     if(to_insert == NULL){
         unix_error("Malloc error");
         exit(1);
@@ -166,11 +155,18 @@ void add_to_log(server_log log, const char* data, int data_len) {
         unix_error("Malloc error");
         exit(1);
     }
-    strcpy(to_insert->log_buf, data);
-    writer_lock();
+    strncpy(to_insert->log_buf, data, data_len + 1);
     to_insert->len_log_buf = data_len;
-    to_insert->next = log->next;
-    log->next = to_insert;
+    to_insert->next = NULL;
+
+    writer_lock();
+
+    server_log last = log;
+    while(last->next != NULL) {
+      last = last->next;
+    }
+    last->next = to_insert;
+
     writer_unlock();
 
 }

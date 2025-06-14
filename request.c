@@ -9,24 +9,24 @@ int append_stats_no_terminal(char *buf, threads_stats t_stats, struct timeval ar
     int offset = strlen(buf);  // Start after what's already written to buf
 
     offset += sprintf(buf + offset, "Stat-Req-Arrival:: %ld.%06ld\r\n",
-                      arrival.tv_sec, arrival.tv_usec);
+		      arrival.tv_sec, arrival.tv_usec);
 
     offset += sprintf(buf + offset, "Stat-Req-Dispatch:: %ld.%06ld\r\n",
-                      dispatch.tv_sec, dispatch.tv_usec);
+		      dispatch.tv_sec, dispatch.tv_usec);
 
     offset += sprintf(buf + offset, "Stat-Thread-Id:: %d\r\n",
-                      t_stats->id);
+		      t_stats->id);
 
     offset += sprintf(buf + offset, "Stat-Thread-Count:: %d\r\n",
-                      t_stats->total_req);
+		      t_stats->total_req);
 
     offset += sprintf(buf + offset, "Stat-Thread-Static:: %d\r\n",
-                      t_stats->stat_req);
+		      t_stats->stat_req);
 
     offset += sprintf(buf + offset, "Stat-Thread-Dynamic:: %d\r\n",
-                      t_stats->dynm_req);
+		      t_stats->dynm_req);
     offset += sprintf(buf + offset, "Stat-Thread-Post:: %d\r\n",
-                      t_stats->post_req);
+		      t_stats->post_req);
     return offset;
 }
 int append_stats(char* buf, threads_stats t_stats, struct timeval arrival, struct timeval dispatch){
@@ -38,32 +38,32 @@ int append_stats(char* buf, threads_stats t_stats, struct timeval arrival, struc
 // requestError(      fd,    filename,        "404",    "Not found", "OS-HW3 Server could not find this file");
 void requestError(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg, struct timeval arrival, struct timeval dispatch, threads_stats t_stats)
 {
-        char buf[MAXLINE], body[MAXBUF];
+	char buf[MAXLINE], body[MAXBUF];
 
-        // Create the body of the error message
-        sprintf(body, "<html><title>OS-HW3 Error</title>");
-        sprintf(body, "%s<body bgcolor=""fffff"">\r\n", body);
-        sprintf(body, "%s%s: %s\r\n", body, errnum, shortmsg);
-        sprintf(body, "%s<p>%s: %s\r\n", body, longmsg, cause);
-        sprintf(body, "%s<hr>OS-HW3 Web Server\r\n", body);
+	// Create the body of the error message
+	sprintf(body, "<html><title>OS-HW3 Error</title>");
+	sprintf(body, "%s<body bgcolor=""fffff"">\r\n", body);
+	sprintf(body, "%s%s: %s\r\n", body, errnum, shortmsg);
+	sprintf(body, "%s<p>%s: %s\r\n", body, longmsg, cause);
+	sprintf(body, "%s<hr>OS-HW3 Web Server\r\n", body);
 
-        // Write out the header information for this response
-        sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
-        Rio_writen(fd, buf, strlen(buf));
-        printf("%s", buf);
+	// Write out the header information for this response
+	sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
+	Rio_writen(fd, buf, strlen(buf));
+	printf("%s", buf);
 
-        sprintf(buf, "Content-Type: text/html\r\n");
-        Rio_writen(fd, buf, strlen(buf));
-        printf("%s", buf);
+	sprintf(buf, "Content-Type: text/html\r\n");
+	Rio_writen(fd, buf, strlen(buf));
+	/* printf("%s", buf); */
 
-        sprintf(buf, "Content-Length: %lu\r\n", strlen(body));
+	sprintf(buf, "Content-Length: %lu\r\n", strlen(body));
 
     int buf_len = append_stats(buf, t_stats, arrival, dispatch);
 
-        Rio_writen(fd, buf, buf_len);
-        printf("%s", buf);
+	Rio_writen(fd, buf, buf_len);
+        /* printf("%s", buf); */
         Rio_writen(fd, body, strlen(body));
-        printf("%s", body);
+        /* printf("%s", body); */
 
 }
 
@@ -141,8 +141,11 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval a
 
         //sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
         //sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
-        *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
-
+        log_buff[0] = '\0';
+        *log_buf_len = append_stats_no_terminal(log_buff, t_stats, arrival, dispatch);
+        // https://piazza.com/class/m8nd0nnxsj77dt/post/377
+        log_buff[*log_buf_len] = '\n';
+        *log_buf_len += 1;
         int pid = 0;
         if ((pid = Fork()) == 0) {
           /* Child process */
@@ -178,13 +181,15 @@ void requestServeStatic(int fd, char *filename, int filesize, struct timeval arr
         int buf_len = append_stats(buf, t_stats, arrival, dispatch);
         Rio_writen(fd, buf, buf_len);
 
-        // put together response
-        // sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
-        // sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
-        // sprintf(log_buff, "%sContent-Length: %d\r\n", log_buff, filesize);
-        // sprintf(log_buff, "%sContent-Type: %s\r\n", log_buff, filetype);
-    *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
 
+        log_buff[0] = '\0'; // just in case log_buff wasn't initialized
+        *log_buf_len = append_stats_no_terminal(log_buff, t_stats, arrival, dispatch);
+        // as explained in `https://piazza.com/class/m8nd0nnxsj77dt/post/377`
+        // a new line should seperate
+        log_buff[*log_buf_len] = '\n';
+        *log_buf_len += 1;
+
+        
         //  Writes out to the client socket the memory-mapped file
         Rio_writen(fd, srcp, filesize);
         Munmap(srcp, filesize);
@@ -213,7 +218,8 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
     int is_static;
     struct stat sbuf;
     int log_buf_len;
-    char buf[MAXLINE], log_buff[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
+    char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
+    char log_buff[MAXLINE] = {0}; // ZZZ
     char filename[MAXLINE], cgiargs[MAXLINE];
     rio_t rio;
 
@@ -236,39 +242,39 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
 
         if (is_static) {
           if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode)) {
-            requestError(fd, filename, "403", "Forbidden",
-                         "OS-HW3 Server could not read this file",
-                         arrival, dispatch, t_stats);
+	    requestError(fd, filename, "403", "Forbidden",
+			 "OS-HW3 Server could not read this file",
+			 arrival, dispatch, t_stats);
 
-            return;
-          }
+	    return;
+	  }
 
-          t_stats->stat_req++;
-          requestServeStatic(fd, filename, sbuf.st_size, arrival, dispatch, t_stats, log_buff, &log_buf_len);
-        } else {
-          if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
-            requestError(fd, filename, "403", "Forbidden",
-                         "OS-HW3 Server could not run this CGI program",
-                         arrival, dispatch, t_stats);
-            return;
-          }
+	  t_stats->stat_req++;
+	  requestServeStatic(fd, filename, sbuf.st_size, arrival, dispatch, t_stats, log_buff, &log_buf_len);
+	} else {
+	  if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
+	    requestError(fd, filename, "403", "Forbidden",
+			 "OS-HW3 Server could not run this CGI program",
+			 arrival, dispatch, t_stats);
+	    return;
+	  }
 
-          t_stats->dynm_req++;
-          requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats, log_buff,&log_buf_len);
-        }
+	  t_stats->dynm_req++;
+	  requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats, log_buff,&log_buf_len);
+	}
 
-        // TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
-        add_to_log( log, log_buff, log_buf_len);
-
+	// TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
+	add_to_log( log, log_buff, log_buf_len);
+        
     } else if (!strcasecmp(method, "POST")) {
 
-        t_stats->post_req++;
-        requestServePost(fd, arrival, dispatch, t_stats, log);
+	t_stats->post_req++;
+	requestServePost(fd, arrival, dispatch, t_stats, log);
 
     } else {
-        requestError(fd, method, "501", "Not Implemented",
-                     "OS-HW3 Server does not implement this method",
-                     arrival, dispatch, t_stats);
-        return;
+	requestError(fd, method, "501", "Not Implemented",
+		     "OS-HW3 Server does not implement this method",
+		     arrival, dispatch, t_stats);
+	return;
     }
 }
