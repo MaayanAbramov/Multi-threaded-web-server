@@ -54,16 +54,16 @@ void requestError(int fd, char *cause, char *errnum, char *shortmsg, char *longm
 
         sprintf(buf, "Content-Type: text/html\r\n");
         Rio_writen(fd, buf, strlen(buf));
-        printf("%s", buf);
+        /* printf("%s", buf); */
 
         sprintf(buf, "Content-Length: %lu\r\n", strlen(body));
 
         int buf_len = append_stats(buf, t_stats, arrival, dispatch);
 
         Rio_writen(fd, buf, buf_len);
-        printf("%s", buf);
+        /* printf("%s", buf); */
         Rio_writen(fd, body, strlen(body));
-        printf("%s", body);
+        /* printf("%s", body); */
 
 }
 
@@ -127,22 +127,26 @@ void requestGetFiletype(char *filename, char *filetype)
                 strcpy(filetype, "text/plain");
 }
 
-void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval arrival, struct timeval dispatch, threads_stats t_stats, char* log_buff, int* log_buf_len)
+void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval arrival, struct timeval dispatch, threads_stats t_stats, server_log log)
 {
         char buf[MAXLINE], *emptylist[] = {NULL};
-
+        char log_buff[MAXLINE] = {0}; // ZZZ
+        int log_buf_len = 0;
         // The server does only a little bit of the header.
         // The CGI script has to finish writing out the header.
         sprintf(buf, "HTTP/1.0 200 OK\r\n");
         sprintf(buf, "%sServer: OS-HW3 Web Server\r\n", buf);
         int buf_len = append_stats_no_terminal(buf, t_stats, arrival, dispatch);
 
-        Rio_writen(fd, buf, buf_len);
 
         //sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
         //sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
-        *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
+        log_buff[0] = '\0';
+        log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
 
+        add_to_log(log, log_buff, log_buf_len);
+
+        Rio_writen(fd, buf, buf_len);
         int pid = 0;
         if ((pid = Fork()) == 0) {
           /* Child process */
@@ -152,14 +156,15 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval a
           Execve(filename, emptylist, environ);
         }
         WaitPid(pid, NULL, WUNTRACED);
-
 }
 
 
-void requestServeStatic(int fd, char *filename, int filesize, struct timeval arrival, struct timeval dispatch, threads_stats t_stats, char* log_buff, int* log_buf_len)
+void requestServeStatic(int fd, char *filename, int filesize, struct timeval arrival, struct timeval dispatch, threads_stats t_stats, server_log log)
 {
         int srcfd;
         char *srcp, filetype[MAXLINE], buf[MAXBUF];
+        char log_buff[MAXLINE] = {0}; // ZZZ
+        int log_buf_len = 0;
 
         requestGetFiletype(filename, filetype);
 
@@ -176,15 +181,13 @@ void requestServeStatic(int fd, char *filename, int filesize, struct timeval arr
         sprintf(buf, "%sContent-Length: %d\r\n", buf, filesize);
         sprintf(buf, "%sContent-Type: %s\r\n", buf, filetype);
         int buf_len = append_stats(buf, t_stats, arrival, dispatch);
+
+
+        log_buff[0] = '\0'; // just in case log_buff wasn't initialized
+        log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
+        add_to_log(log, log_buff, log_buf_len);
+
         Rio_writen(fd, buf, buf_len);
-
-        // put together response
-        // sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
-        // sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
-        // sprintf(log_buff, "%sContent-Length: %d\r\n", log_buff, filesize);
-        // sprintf(log_buff, "%sContent-Type: %s\r\n", log_buff, filetype);
-        *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
-
         //  Writes out to the client socket the memory-mapped file
         Rio_writen(fd, srcp, filesize);
         Munmap(srcp, filesize);
@@ -212,8 +215,8 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
 
     int is_static;
     struct stat sbuf;
-    int log_buf_len;
     char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
+
     char filename[MAXLINE], cgiargs[MAXLINE];
     rio_t rio;
     char* log_buff = (char*)malloc(sizeof(char)*MAXLINE);
@@ -244,7 +247,7 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
           }
 
           t_stats->stat_req++;
-          requestServeStatic(fd, filename, sbuf.st_size, arrival, dispatch, t_stats, log_buff, &log_buf_len);
+          requestServeStatic(fd, filename, sbuf.st_size, arrival, dispatch, t_stats, log);
         } else {
           if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
             requestError(fd, filename, "403", "Forbidden",
@@ -254,12 +257,8 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
           }
 
           t_stats->dynm_req++;
-          requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats, log_buff,&log_buf_len);
+          requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats, log);
         }
-
-        // TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
-        add_to_log( log, log_buff, log_buf_len);
-        free(log_buff);
 
     } else if (!strcasecmp(method, "POST")) {
 

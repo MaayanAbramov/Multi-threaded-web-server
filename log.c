@@ -1,9 +1,10 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include "log.h"
 #include "assert.h"
 
-int readers_inside, writers_inside, writers_waiting; 
+int readers_inside, writers_inside, writers_waiting;
 pthread_cond_t read_allowed;
 pthread_cond_t write_allowed;
 pthread_mutex_t global_lock;
@@ -17,7 +18,7 @@ void readers_writers_init() {
     pthread_mutex_init(&global_lock, NULL);
 }
 void readers_writers_destroy() {
-    
+
     pthread_cond_destroy(&read_allowed);
     pthread_cond_destroy(&write_allowed);
     pthread_mutex_destroy(&global_lock);
@@ -27,7 +28,7 @@ void reader_lock() {
     while (writers_inside > 0 || writers_waiting > 0)
         pthread_cond_wait(&read_allowed, &global_lock);
     readers_inside++;
-    pthread_mutex_unlock(&global_lock); 
+    pthread_mutex_unlock(&global_lock);
 }
 
 void reader_unlock() {
@@ -67,7 +68,7 @@ struct Server_Log {
 
 // Creates a new server log instance (stub)
 server_log create_log() {
-    
+
     readers_writers_init();
     // TODO: Allocate and initialize internal log structure
     const char* dummy_buffer = "";
@@ -103,7 +104,7 @@ void destroy_log(server_log log) {
     }
 
     readers_writers_destroy();
-    free(log);
+    /* free(log); */
     return;
 }
 
@@ -118,32 +119,35 @@ int get_log(server_log log, char** dst) {
     while(tmp!= NULL){
         assert(tmp->log_buf!= NULL && tmp->len_log_buf >= 0);
         total_len += tmp->len_log_buf;
+        total_len += 1; // for a line delimiter '\n'
         tmp = tmp->next;
     }
     *dst = (char*)malloc(total_len + 1); // Allocate for caller
     int offset = 0 ;
     tmp = log->next;
-    int first_time = 1;
+    bool first_time = true;
     if (*dst != NULL) {
         while(tmp != NULL){
-            if(first_time == 0){
-            strcat(*dst,tmp->log_buf);
-            }
-            else{
-                strcpy(*dst,tmp->log_buf);
-                first_time = 0;
-            }
-            offset += tmp->len_log_buf;
-            tmp = tmp->next;
-            
+          if (!first_time) {
+            // as explained in `https://piazza.com/class/m8nd0nnxsj77dt/post/377`
+            // a new line should seperate
+            (*dst)[offset] = '\n';
+            offset += 1;
+          }
+          first_time = false;
+          strncpy(*dst + offset,tmp->log_buf,tmp->len_log_buf);
+
+          offset += tmp->len_log_buf;
+          tmp = tmp->next;
         }
+        (*dst)[offset] = '\0';
     }
     else{
         unix_error("Malloc Error!\n");
         exit(1);
     }
     reader_unlock();
-    return total_len;
+    return offset;
 }
 
 // Appends a new entry to the log (no-op stub)
@@ -151,7 +155,7 @@ void add_to_log(server_log log, const char* data, int data_len) {
     // TODO: Append the provided data to the log
     // This function should handle concurrent access
     assert(strlen(data) == data_len);
-    server_log to_insert= (server_log)malloc(sizeof(*to_insert));
+    server_log to_insert = (server_log)malloc(sizeof(*to_insert));
     if(to_insert == NULL){
         unix_error("Malloc error");
         exit(1);
@@ -164,22 +168,15 @@ void add_to_log(server_log log, const char* data, int data_len) {
     strcpy(to_insert->log_buf, data);
     to_insert->len_log_buf = data_len;
     to_insert->next = NULL;
+
     writer_lock();
-    server_log tmp = log->next;
-    if(tmp!= NULL)
-    {
-    while(tmp->next!=NULL){
-        tmp = tmp->next;
+
+    server_log last = log;
+    while(last->next != NULL) {
+      last = last->next;
     }
-    tmp->next = to_insert;
-    }
-    else{
-        log->next = to_insert;
-    }
-    // writer_lock();
-    // to_insert->len_log_buf = data_len;
-    // to_insert->next = log->next;
-    // log->next = to_insert;
+    last->next = to_insert;
+
     writer_unlock();
 
 }

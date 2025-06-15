@@ -102,7 +102,7 @@ void* thread_function(void* arg/* the real argument is thread_stats* stats */){
 int main(int argc, char *argv[])
 {
     int cntcnt = 0;
-    printf("my pid is %d \n",(int)getpid());
+    /* printf("my pid is %d \n",(int)getpid()); */
     // Create the global server log
     requests_log = create_log(); 
     pthread_mutex_init(&queue_mutex,NULL);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
         unix_error("Malloc Fail!");
         exit(1);
     }
-    printf("---------------------------------thread num--------------------------------------------------%d****************************************************", thread_num);
+    /* printf("---------------------------------thread num--------------------------------------------------%d****************************************************", thread_num); */
     for(int i = 0 ; i < thread_num ; i++){
         pthread_t thread;
         threads_stats stats = malloc(sizeof(struct Threads_stats));

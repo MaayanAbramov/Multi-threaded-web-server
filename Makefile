@@ -3,7 +3,7 @@
 # To remove files, type "make clean"
 #
 
-OBJS = server.o request.o segel.o client.o log.o
+OBJS = server.o request.o segel.o client.o log.o queue.o
 TARGET = server
 
 CC = gcc
@@ -32,3 +32,5 @@ output.cgi: output.c
 clean:
 	-rm -f $(OBJS) server client output.cgi
 	-rm -rf public
+test: tests/*
+	-rm -rf tests/get_request.txt tests/post_request.txt
