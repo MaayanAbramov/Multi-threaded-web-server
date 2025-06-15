@@ -142,10 +142,7 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval a
         //sprintf(log_buff, "HTTP/1.0 200 OK\r\n");
         //sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
         log_buff[0] = '\0';
-        log_buf_len = append_stats_no_terminal(log_buff, t_stats, arrival, dispatch);
-        // https://piazza.com/class/m8nd0nnxsj77dt/post/377
-        log_buff[log_buf_len] = '\n';
-        log_buf_len += 1;
+        log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
 
         add_to_log(log, log_buff, log_buf_len);
 
@@ -187,12 +184,7 @@ void requestServeStatic(int fd, char *filename, int filesize, struct timeval arr
 
 
         log_buff[0] = '\0'; // just in case log_buff wasn't initialized
-        log_buf_len = append_stats_no_terminal(log_buff, t_stats, arrival, dispatch);
-        // as explained in `https://piazza.com/class/m8nd0nnxsj77dt/post/377`
-        // a new line should seperate
-        log_buff[log_buf_len] = '\n';
-        log_buf_len += 1;
-
+        log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
         add_to_log(log, log_buff, log_buf_len);
 
         Rio_writen(fd, buf, buf_len);
@@ -223,7 +215,6 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
 
     int is_static;
     struct stat sbuf;
-    int log_buf_len;
     char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
 
     char filename[MAXLINE], cgiargs[MAXLINE];
@@ -268,9 +259,6 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
           t_stats->dynm_req++;
           requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats, log);
         }
-
-        // TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
-        /* add_to_log( log, log_buff, log_buf_len); */
 
     } else if (!strcasecmp(method, "POST")) {
 

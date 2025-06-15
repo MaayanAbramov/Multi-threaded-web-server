@@ -119,25 +119,35 @@ int get_log(server_log log, char** dst) {
     while(tmp!= NULL){
         assert(tmp->log_buf!= NULL && tmp->len_log_buf >= 0);
         total_len += tmp->len_log_buf;
+        total_len += 1; // for a line delimiter '\n'
         tmp = tmp->next;
     }
     *dst = (char*)malloc(total_len + 1); // Allocate for caller
     int offset = 0 ;
     tmp = log->next;
+    bool first_time = true;
     if (*dst != NULL) {
         while(tmp != NULL){
-          strncpy(*dst + offset,tmp->log_buf,tmp->len_log_buf + 1);
+          if (!first_time) {
+            // as explained in `https://piazza.com/class/m8nd0nnxsj77dt/post/377`
+            // a new line should seperate
+            (*dst)[offset] = '\n';
+            offset += 1;
+          }
+          first_time = false;
+          strncpy(*dst + offset,tmp->log_buf,tmp->len_log_buf);
 
           offset += tmp->len_log_buf;
           tmp = tmp->next;
         }
+        (*dst)[offset] = '\0';
     }
     else{
         unix_error("Malloc Error!\n");
         exit(1);
     }
     reader_unlock();
-    return total_len;
+    return offset;
 }
 
 // Appends a new entry to the log (no-op stub)
