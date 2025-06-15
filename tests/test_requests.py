@@ -185,9 +185,11 @@ def test_statistics_post(server_port):
                 f"http://localhost:{server_port}/not_exist.html")
             response4 = future.result()
             post_count += 1
-            expected_headers = generate_static_headers(368, 5, 2, 0, post_count,"text/plain")
+            expected_headers = generate_static_headers(369, 5, 2, 0, post_count,"text/plain")
             expected = STATIC_OUTPUT_CONTENT.format(method=r"POST")
-            validate_response_full_post(response4, expected_headers, expected, "\r\n".join(get_statistics_list_for_post))
+            expected_string = "\r\n\r\n\n".join(get_statistics_list_for_post)
+            expected_string = expected_string +"\r\n\r\n"
+            validate_response_full_post(response4, expected_headers, expected, expected_string)
         with FuturesSession() as session4:
             future = session4.get(f"http://localhost:{server_port}/output.cgi?1")
             response3 = future.result()
@@ -201,9 +203,9 @@ def test_statistics_post(server_port):
                 f"http://localhost:{server_port}/not_exist.html")
             response4 = future.result()
             post_count += 1
-            expected_headers = generate_static_headers(552, 7, 2, 1, post_count,"text/plain")
+            expected_headers = generate_static_headers(554, 7, 2, 1, post_count,"text/plain")
             expected = STATIC_OUTPUT_CONTENT.format(method=r"POST")
-            validate_response_full_post(response4, expected_headers, expected, "\r\n".join(get_statistics_list_for_post))
+            validate_response_full_post(response4, expected_headers, expected, "\r\n\r\n\n".join(get_statistics_list_for_post)+"\r\n\r\n")
         with FuturesSession() as session:
             future = session.get(f"http://localhost:{server_port}/")
             response = future.result()

@@ -72,9 +72,9 @@ def validate_response_full_post(response: requests.models.Response, expected_hea
             f"\nHeader:\n{header}"\
             f"\nExpected:\n{value}"\
             f"\nGot:\n{response.headers[header]}"
-    assert re.fullmatch(post_string.replace("\r\n",""), response.text.replace("\r\n","")),\
-        f"\nExpected:\n{post_string}"\
-        f"\nGot:\n{response.text}"
+    assert re.fullmatch(post_string, response.text),\
+        f"\nExpected:\n{repr(post_string)}"\
+        f"\nGot:\n{repr(response.text)}"
     
 def validate_response_full(response: requests.models.Response, expected_headers: dict, expected: str):
     assert response.status_code == 200
