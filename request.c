@@ -50,20 +50,16 @@ void requestError(int fd, char *cause, char *errnum, char *shortmsg, char *longm
         // Write out the header information for this response
         sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
         Rio_writen(fd, buf, strlen(buf));
-        printf("%s", buf);
 
         sprintf(buf, "Content-Type: text/html\r\n");
         Rio_writen(fd, buf, strlen(buf));
-        /* printf("%s", buf); */
 
         sprintf(buf, "Content-Length: %lu\r\n", strlen(body));
 
         int buf_len = append_stats(buf, t_stats, arrival, dispatch);
 
         Rio_writen(fd, buf, buf_len);
-        /* printf("%s", buf); */
         Rio_writen(fd, body, strlen(body));
-        /* printf("%s", body); */
 
 }
 
