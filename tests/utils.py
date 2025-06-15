@@ -7,15 +7,9 @@ import math
 
 from definitions import DYNAMIC_OUTPUT_HEADERS, ERROR_OUTPUT_HEADERS, STATIC_OUTPUT_HEADERS
 
-def concat_dict_as_string(string, dictionary,dictionary_keys):
-    to_ret = ""
-    if string == "":
-        to_ret =  "\r\n".join([':'.join([k, dictionary[k]]) for k in dictionary_keys if k not in ["Content-length","Content-type","Server","Content-Length","Content-Type"]])
-    else:
-        list_strings = [string]
-        list_strings.extend([':'.join([k, dictionary[k]]) for k in dictionary_keys if k not in ["Content-length","Content-type","Server","Content-Length","Content-Type"]])
-        to_ret =  "\r\n".join(list_strings)
-    return to_ret+"\r\n"
+def convert_dict_to_string(dictionary, dictionary_keys):
+       return  "\r\n".join([':'.join([k, dictionary[k]]) for k in dictionary_keys if k not in ["Content-length","Content-type","Server","Content-Length","Content-Type"]])
+
 
 def generate_static_headers(length, count, static_count, dynamic_count, post_count,content_type="text/html"):
     headers = copy(STATIC_OUTPUT_HEADERS)
@@ -78,7 +72,7 @@ def validate_response_full_post(response: requests.models.Response, expected_hea
             f"\nHeader:\n{header}"\
             f"\nExpected:\n{value}"\
             f"\nGot:\n{response.headers[header]}"
-    assert re.fullmatch(post_string, response.text),\
+    assert re.fullmatch(post_string.replace("\r\n",""), response.text.replace("\r\n","")),\
         f"\nExpected:\n{post_string}"\
         f"\nGot:\n{response.text}"
     

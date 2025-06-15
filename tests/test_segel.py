@@ -101,7 +101,7 @@ LIGHT_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_heade
                }
 
 LIGHT2_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
-                '/output.cgi?0.0112': [True, DYNAMIC_OUTPUT_CONTENT.format(count=r"\d+", static=r"\d+", dynamic=r"\d+", seconds="0.0"),  generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+")],
+                '/output.cgi?0.0112': [True, DYNAMIC_OUTPUT_CONTENT.format(count=r"\d+", static=r"\d+", dynamic=r"\d+", seconds="0.0"),  generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+",  r"\d+")],
                 '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")]
                 }
 

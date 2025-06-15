@@ -162,10 +162,24 @@ void add_to_log(server_log log, const char* data, int data_len) {
         exit(1);
     }
     strcpy(to_insert->log_buf, data);
-    writer_lock();
     to_insert->len_log_buf = data_len;
-    to_insert->next = log->next;
-    log->next = to_insert;
+    to_insert->next = NULL;
+    writer_lock();
+    server_log tmp = log->next;
+    if(tmp!= NULL)
+    {
+    while(tmp->next!=NULL){
+        tmp = tmp->next;
+    }
+    tmp->next = to_insert;
+    }
+    else{
+        log->next = to_insert;
+    }
+    // writer_lock();
+    // to_insert->len_log_buf = data_len;
+    // to_insert->next = log->next;
+    // log->next = to_insert;
     writer_unlock();
 
 }

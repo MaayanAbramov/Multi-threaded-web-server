@@ -58,7 +58,7 @@ void requestError(int fd, char *cause, char *errnum, char *shortmsg, char *longm
 
         sprintf(buf, "Content-Length: %lu\r\n", strlen(body));
 
-    int buf_len = append_stats(buf, t_stats, arrival, dispatch);
+        int buf_len = append_stats(buf, t_stats, arrival, dispatch);
 
         Rio_writen(fd, buf, buf_len);
         printf("%s", buf);
@@ -183,7 +183,7 @@ void requestServeStatic(int fd, char *filename, int filesize, struct timeval arr
         // sprintf(log_buff, "%sServer: OS-HW3 Web Server\r\n", log_buff);
         // sprintf(log_buff, "%sContent-Length: %d\r\n", log_buff, filesize);
         // sprintf(log_buff, "%sContent-Type: %s\r\n", log_buff, filetype);
-    *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
+        *log_buf_len = append_stats(log_buff, t_stats, arrival, dispatch);
 
         //  Writes out to the client socket the memory-mapped file
         Rio_writen(fd, srcp, filesize);
@@ -213,10 +213,10 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
     int is_static;
     struct stat sbuf;
     int log_buf_len;
-    char buf[MAXLINE], log_buff[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
+    char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
     char filename[MAXLINE], cgiargs[MAXLINE];
     rio_t rio;
-
+    char* log_buff = (char*)malloc(sizeof(char)*MAXLINE);
     Rio_readinitb(&rio, fd);
     Rio_readlineb(&rio, buf, MAXLINE);
     sscanf(buf, "%s %s %s", method, uri, version);
@@ -259,6 +259,7 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
 
         // TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
         add_to_log( log, log_buff, log_buf_len);
+        free(log_buff);
 
     } else if (!strcasecmp(method, "POST")) {
 
