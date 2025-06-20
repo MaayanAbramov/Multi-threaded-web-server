@@ -149,10 +149,14 @@ int main(int argc, char *argv[])
         // the request in the main thread without concurrency.
         // Replace this with logic to enqueue the connection and let
         // a worker thread process it from the queue.
-        
+        struct timeval arrival, dispatch;
+        gettimeofday(&arrival,NULL);
+        gettimeofday(&dispatch,NULL);
         //printf("lock in main \n");
         pthread_mutex_lock(&queue_mutex);
         //printf("lock in main success \n");
+ // not the real dispatch time. this should be updated by thread worker when dequeued.
+
         while(getSize(working_tasks_queue)+getSize(waiting_tasks_queue)>=queue_size){
             //printf("entering cond_wait master_condition in main (beacuse of capacity)  \n");
             /* printf("main thread is going to wait, size of waiting queue is %d, size of working queue is %d, lastly, " */
@@ -162,10 +166,7 @@ int main(int argc, char *argv[])
         }
         //printf("main thread enqueues new task!\n");
         cntcnt++;
-	struct timeval arrival, dispatch;
-        gettimeofday(&arrival,NULL);
-        gettimeofday(&dispatch,NULL); // not the real dispatch time. this should be updated by thread worker when dequeued.
-
+	
         enqueue(waiting_tasks_queue ,connfd, arrival,dispatch);
         //printf("main thread is going to wait, size of waiting queue is %d, size of working queue is %d, lastly, "
          //       "queue size : %d \n",getSize(waiting_tasks_queue), getSize(working_tasks_queue),queue_size);
