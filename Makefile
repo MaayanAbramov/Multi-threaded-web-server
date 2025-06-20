@@ -14,13 +14,12 @@ LIBS = -lpthread
 
 .SUFFIXES: .c .o
 
-server: server.o request.o segel.o log.o queue.o
-	$(CC) $(CFLAGS) -o server queue.o server.o request.o segel.o log.o $(LIBS)
-
-
 all: server client output.cgi
 	-mkdir -p public
 	-cp output.cgi favicon.ico home.html public
+
+server: server.o request.o segel.o log.o queue.o
+	$(CC) $(CFLAGS) -o server queue.o server.o request.o segel.o log.o $(LIBS)
 
 
 client: client.o segel.o
