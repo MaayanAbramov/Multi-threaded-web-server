@@ -4,6 +4,9 @@
 #include "log.h"
 #include "assert.h"
 
+#ifndef NDEBUG
+#      include <unistd.h>
+#endif
 int readers_inside, writers_inside, writers_waiting;
 pthread_cond_t read_allowed;
 pthread_cond_t write_allowed;
@@ -170,7 +173,9 @@ void add_to_log(server_log log, const char* data, int data_len) {
     to_insert->next = NULL;
 
     writer_lock();
-
+#ifndef NDEBUG
+    usleep(200000);
+#endif
     server_log last = log;
     while(last->next != NULL) {
       last = last->next;
