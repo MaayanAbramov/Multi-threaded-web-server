@@ -11,8 +11,7 @@
 // 
 
 double spinfor = 5.0;
-//double spinfor = 0.5; 
-
+//double spinfor = 0.5;
 void getargs()
 {
   char *buf, *p;

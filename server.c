@@ -101,9 +101,7 @@ void* thread_function(void* arg/* the real argument is thread_stats* stats */){
 }
 int main(int argc, char *argv[])
 {
-    int cntcnt = 0;
-    /* printf("my pid is %d \n",(int)getpid()); */
-    // Create the global server log
+    
     requests_log = create_log(); 
     pthread_mutex_init(&queue_mutex,NULL);
     pthread_cond_init(&master_condition,NULL);
@@ -140,6 +138,20 @@ int main(int argc, char *argv[])
     listenfd = Open_listenfd(port);
     while (1) {
         //printf("lock in main \n");
+        
+        pthread_mutex_lock(&queue_mutex);
+        //printf("lock in main success \n");
+ // not the real dispatch time. this should be updated by thread worker when dequeued.
+        while(getSize(working_tasks_queue)+getSize(waiting_tasks_queue)>=queue_size){
+            //printf("entering cond_wait master_condition in main (beacuse of capacity)  \n");
+            /* printf("main thread is going to wait, size of waiting queue is %d, size of working queue is %d, lastly, " */
+                   /* "queue size : %d \n",getSize(waiting_tasks_queue), getSize(working_tasks_queue),queue_size); */
+            pthread_cond_wait(&master_condition,&queue_mutex);
+            //printf("entering cond_wait master_condition in main (beacuse of capacity), success \n");
+
+        }
+    
+        pthread_mutex_unlock(&queue_mutex);
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen); 
         // TODO: HW3 — Record the request arrival time here
@@ -153,28 +165,14 @@ int main(int argc, char *argv[])
         struct timeval arrival, dispatch;
         gettimeofday(&arrival,NULL);
         gettimeofday(&dispatch,NULL);
-        pthread_mutex_lock(&queue_mutex);
-        //printf("lock in main success \n");
- // not the real dispatch time. this should be updated by thread worker when dequeued.
-        while(getSize(working_tasks_queue)+getSize(waiting_tasks_queue)>=queue_size){
-            //printf("entering cond_wait master_condition in main (beacuse of capacity)  \n");
-            /* printf("main thread is going to wait, size of waiting queue is %d, size of working queue is %d, lastly, " */
-                   /* "queue size : %d \n",getSize(waiting_tasks_queue), getSize(working_tasks_queue),queue_size); */
-            pthread_cond_wait(&master_condition,&queue_mutex);
-            //printf("entering cond_wait master_condition in main (beacuse of capacity), success \n");
-
-        }
-    
-
-    
         //printf("main thread enqueues new task!\n");
         
-	
+        pthread_mutex_lock(&queue_mutex);
         enqueue(waiting_tasks_queue ,connfd, arrival,dispatch);
         //printf("main thread is going to wait, size of waiting queue is %d, size of working queue is %d, lastly, "
          //       "queue size : %d \n",getSize(waiting_tasks_queue), getSize(working_tasks_queue),queue_size);
         //printf("******************************************number of tasks so far is is "
-           //    "%d****************************************\n",cntcnt);
+          
         //printf("main thread successfully enqueued new task!\n");
         if (getSize(waiting_tasks_queue) > 0) {
             //printf("signaling  worker threads to work , after enqueueing the task in main  \n");
