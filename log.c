@@ -173,6 +173,7 @@ void add_to_log(server_log log, const char* data, int data_len) {
     to_insert->next = NULL;
 
     writer_lock();
+    //usleep(200000);
     server_log last = log;
     while(last->next != NULL) {
       last = last->next;

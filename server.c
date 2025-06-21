@@ -139,9 +139,9 @@ int main(int argc, char *argv[])
     }
     listenfd = Open_listenfd(port);
     while (1) {
+        //printf("lock in main \n");
         clientlen = sizeof(clientaddr);
-        connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
-
+        connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen); 
         // TODO: HW3 — Record the request arrival time here
 
         // DEMO PURPOSE ONLY:
@@ -149,23 +149,26 @@ int main(int argc, char *argv[])
         // the request in the main thread without concurrency.
         // Replace this with logic to enqueue the connection and let
         // a worker thread process it from the queue.
+
         struct timeval arrival, dispatch;
         gettimeofday(&arrival,NULL);
         gettimeofday(&dispatch,NULL);
-        //printf("lock in main \n");
         pthread_mutex_lock(&queue_mutex);
         //printf("lock in main success \n");
  // not the real dispatch time. this should be updated by thread worker when dequeued.
-
         while(getSize(working_tasks_queue)+getSize(waiting_tasks_queue)>=queue_size){
             //printf("entering cond_wait master_condition in main (beacuse of capacity)  \n");
             /* printf("main thread is going to wait, size of waiting queue is %d, size of working queue is %d, lastly, " */
                    /* "queue size : %d \n",getSize(waiting_tasks_queue), getSize(working_tasks_queue),queue_size); */
             pthread_cond_wait(&master_condition,&queue_mutex);
             //printf("entering cond_wait master_condition in main (beacuse of capacity), success \n");
+
         }
+    
+
+    
         //printf("main thread enqueues new task!\n");
-        cntcnt++;
+        
 	
         enqueue(waiting_tasks_queue ,connfd, arrival,dispatch);
         //printf("main thread is going to wait, size of waiting queue is %d, size of working queue is %d, lastly, "
